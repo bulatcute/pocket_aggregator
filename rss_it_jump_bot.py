@@ -1,10 +1,7 @@
 from telegram.ext import Updater, CommandHandler
-import telegram
-import requests
 from bs4 import BeautifulSoup
 import feedparser
 import urllib.request
-import time
 
 
 def get_rss_feed1(website_url):
