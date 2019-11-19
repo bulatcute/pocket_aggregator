@@ -1,5 +1,5 @@
 # IT Jump RSS Bot
-## Команда: 
+## Team: 
 bulatcute, StailFX, dwarfLOL
-## Описание:
-Этот бот умеет собирать новости с различных новостных ресурсов
+## Description:
+This bot can collect posts from different news portals.
