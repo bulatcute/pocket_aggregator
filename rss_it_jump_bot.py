@@ -64,7 +64,9 @@ def read(update, context):
         article_published_at_parsed = entry.published_parsed  # Time object
 
         msg = f'''* {article_title} *
+
 published at {article_published_at}
+
 {article_link}'''
         print(msg)
         context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
