@@ -2,6 +2,7 @@ from telegram.ext import Updater, CommandHandler
 from bs4 import BeautifulSoup
 import feedparser
 import urllib.request
+import telegram
 
 
 def get_rss_feed1(website_url):
@@ -61,16 +62,12 @@ def read(update, context):
         article_link = entry.link
         article_published_at = entry.published
         article_published_at_parsed = entry.published_parsed  # Time object
-        content = entry.summary
 
-        msg = f'''{article_title}
-{content}
-----------------------------
+        msg = f'''* {article_title} *
 published at {article_published_at}
-----------------------------
 {article_link}'''
         print(msg)
-        context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 dispather.add_handler(CommandHandler("start", start))
