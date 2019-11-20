@@ -2,7 +2,15 @@ from telegram.ext import Updater, CommandHandler
 from bs4 import BeautifulSoup
 import feedparser
 import urllib.request
+import telegram
 
+def get_user_data(data_path):
+    with open(data_path, 'rt') as data_file:
+        data_list = data_file.read().split('\n')
+    user_data = {data_list[i * 6] : [data_list[i*6 + j] for j in range(1, 6)] for i in range(len(data_list) // 6)}
+
+def set_user_data(data_path, data_list):
+    pass
 
 def get_rss_feed1(website_url):
     page = urllib.request.urlopen(website_url)
