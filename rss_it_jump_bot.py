@@ -4,10 +4,15 @@ import feedparser
 import urllib.request
 import telegram
 
+# update.message.from_user — 
+
 def get_user_data(data_path):
     with open(data_path, 'rt') as data_file:
         data_list = data_file.read().split('\n')
     user_data = {data_list[i * 6] : [data_list[i*6 + j] for j in range(1, 6)] for i in range(len(data_list) // 6)}
+    for key in user_data.keys:
+        user_data[key][5] = user_data[key][5].split()
+    # В итоге должно получиться что-то типа {id : []}
 
 def set_user_data(data_path, data_list):
     pass
@@ -30,6 +35,7 @@ dispather = updater.dispatcher
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я — бот-новостной агрегатор, разработанный на смене IT Jump Pro\
 \nНапиши мне /help и я скажу тебе как мной пользоваться")
+    print(update.message.from_user)
 
 
 def help(update, context):
