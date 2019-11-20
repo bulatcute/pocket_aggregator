@@ -1,0 +1,3 @@
+telegram.ext
+bs4
+feedparser
