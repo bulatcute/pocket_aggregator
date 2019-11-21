@@ -15,7 +15,7 @@ def get_rss_feed1(website_url):
     return link['href']
 
 
-telegram_token = '1017866523:AAEAVHRHWbnJO48nm5Rud8bKAST-1-sUVD0'
+telegram_token = 'TOKEN'
 updater = Updater(telegram_token, use_context=True)
 dispather = updater.dispatcher
 
