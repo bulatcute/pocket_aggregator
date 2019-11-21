@@ -1,4 +1,0 @@
-telegram.ext==12.2.0
-telegram==0.0.1
-bs4==0.0.1
-feedparser==5.2.1
