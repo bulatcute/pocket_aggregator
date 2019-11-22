@@ -78,7 +78,6 @@ def read(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Осталось совсем чуть-чуть...')
 
     feed = feedparser.parse(feed_url)
-
     feed_title = feed['feed']['title']
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
 
@@ -87,11 +86,8 @@ def read(update, context):
         article_title = entry.title
         article_link = entry.link
         article_published_at = entry.published
-        article_published_at_parsed = entry.published_parsed  # Time object
-        content = entry.summary
 
         msg = f'''{article_title}
-{content}
 ----------------------------
 published at {article_published_at}
 ----------------------------
@@ -130,7 +126,7 @@ def add(update, context):
 #endregion
 
 #region Setup
-telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
+telegram_token = 'TOKEN'
 updater = Updater(telegram_token, use_context=True)
 dispather = updater.dispatcher
 
