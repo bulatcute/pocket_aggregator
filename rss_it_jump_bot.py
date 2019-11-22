@@ -9,13 +9,20 @@ def get_user_data(data_path):
     with open(data_path, 'rt') as data_file:
         data_list = data_file.read().split('\n')
     user_data = {data_list[i * 6] : [data_list[i*6 + j] for j in range(1, 6)] for i in range(len(data_list) // 6)}
-    for key in user_data.keys:
-        user_data[key][5] = user_data[key][5].split()
+    for key in user_data.keys():
+        user_data[key][-1] = user_data[key][-1].split() # Если подписки записаны через пробел
     # В итоге должно получиться что-то типа {id : [first_name, is_bot, username, language_code, [subscribes]]}
     return user_data
 
-def set_user_data(data_path, data_list):
-    pass
+def set_user_data(data_path, user_data):
+    data_list = []
+    for key in user_data.keys():
+        data_list.append(str(key))
+        data_list.extend([str(user_data[key][i]) for i in range(4)])
+        data_list.append(' '.join(user_data[key][-1])) 
+    with open(data_path, 'wt') as data_file:
+        data_file.write('\n'.join(data_list))
+
 
 def get_rss_feed1(website_url):
     page = urllib.request.urlopen(website_url)
@@ -27,7 +34,7 @@ def get_rss_feed1(website_url):
     return link['href']
 
 
-telegram_token = '1017866523:AAEAVHRHWbnJO48nm5Rud8bKAST-1-sUVD0'
+telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
 updater = Updater(telegram_token, use_context=True)
 dispather = updater.dispatcher
 

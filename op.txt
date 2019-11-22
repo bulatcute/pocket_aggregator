@@ -1,0 +1,6 @@
+id
+first_name
+is_bot
+username
+language_code
+subscribes dg
