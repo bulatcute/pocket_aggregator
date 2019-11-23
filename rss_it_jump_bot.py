@@ -16,6 +16,11 @@ def get_user_data(data_path):
     # В итоге должно получиться что-то типа {id : [first_name, is_bot, username, language_code, [subscribes]]}
     return user_data
 
+def refresh_function(bot, job):
+    print('ref')
+    print(job.context, '0')
+    d = feedparser.parse(job.context)
+
 def set_user_data(data_path, user_data):
     data_list = []
     for key in user_data.keys():
@@ -93,6 +98,13 @@ published at {article_published_at}
 
 {article_link}'''
         context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+    checker1 = feed_entries[0].title
+    print(checker1)
+    print(feed_url)
+    j_queue.run_once(refresh_function, 5, context=feed_url)
+
+
+
 #endregion
 
 #region Add
@@ -123,11 +135,13 @@ def add(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'Список ваших подписок: '
                                                                     f'{user_data[str(tg_user.id)][-1]}')
     set_user_data('user_db.txt', user_data)
+    
 #endregion
 
 #region Setup
-telegram_token = 'TOKEN'
+telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
 updater = Updater(telegram_token, use_context=True)
+j_queue = updater.job_queue
 dispather = updater.dispatcher
 
 dispather.add_handler(CommandHandler("start", start))
