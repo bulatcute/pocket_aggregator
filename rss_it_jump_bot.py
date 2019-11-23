@@ -12,8 +12,7 @@ def get_user_data(data_path):
         data_list = data_file.read().split('\n')
     user_data = {data_list[i*2] : data_list[i*2 + 1] for i in range(len(data_list) // 2)}
     for key in user_data.keys():
-        user_data[key] = user_data[key].split() # Если подписки записаны через пробел
-    # В итоге должно получиться что-то типа {id : [subscribes]}
+        user_data[key] = user_data[key].split()
     return user_data
 
 def set_user_data(data_path, user_data):
