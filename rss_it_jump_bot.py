@@ -1,28 +1,40 @@
 #region Imports
 from telegram.ext import Updater, CommandHandler
 from bs4 import BeautifulSoup
+from pony.orm import *
 import feedparser
 import urllib.request
 import telegram
 import requests
 #endregion
 
-#region Util functions
-def get_user_data(data_path):
-    with open(data_path, 'rt') as data_file:
-        data_list = data_file.read().split('\n')
-    user_data = {data_list[i*2] : data_list[i*2 + 1] for i in range(len(data_list) // 2)}
-    for key in user_data.keys():
-        user_data[key] = user_data[key].split()
-    return user_data
+#region Database Setup
+db = Database('sqlite', 'bot.sqlite', create_db=True)
 
-def set_user_data(data_path, user_data):
-    data_list = []
-    for key in user_data.keys():
-        data_list.append(key)
-        data_list.append(' '.join(user_data[key]))
-    with open(data_path, 'wt') as data_file:
-        data_file.write('\n'.join(data_list))
+class User(db.Entity):
+    user_id = Required(int)
+    sites = Set('Feed')
+
+class Feed(db.Entity):
+    url = Required(str)
+    users = Set(User)
+
+@db_session
+def add_feed_user(feed, user):
+    feed.users.add(user)
+
+@db_session
+def add_user(id):
+    return User(user_id=id)
+
+@db_session
+def add_feed(aurl):
+    return Feed(url=aurl)
+
+db.generate_mapping(create_tables=True)
+#endregion
+
+#region Util functions
 
 def get_rss_feed(website_url):
     source_code = requests.get(website_url)
@@ -35,13 +47,11 @@ def get_rss_feed(website_url):
 
 #region Start
 def start(update, context):
-    user_data = get_user_data('user_db.txt')
     tg_user = update.message.from_user
 
-    if not tg_user.id in user_data.keys():
-        user_data[str(tg_user.id)] = []
-
-    set_user_data('user_db.txt', user_data)
+    with db_session:
+        if not tg_user.id in select(u.user_id for u in User)[:]:
+            u1 = add_user(tg_user.id)
 
     context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я — бот-новостной агрегатор, разработанный на смене IT Jump Pro\
 \nНапиши мне /help и я скажу тебе как мной пользоваться")
@@ -56,12 +66,7 @@ def help(update, context):
 
 #region Read
 def read(update, context):
-    args = update.message.text.split()
-    del args[0]
-
-    arg_url = args[0]
-
-    # arg_name = args[1]
+    arg_url = context.args[0]
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
 
     feed_url = get_rss_feed(arg_url)
@@ -88,17 +93,14 @@ def read(update, context):
         msg = f'''{article_title}
 ----------------------------
 published at {article_published_at}
-
+----------------------------
 {article_link}'''
         context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
 #endregion
 
 #region Add
 def add(update, context):
-    args = update.message.text.split()
-    arg_url = args[1]
-    del args
-    user_data = get_user_data('user_db.txt')
+    arg_url = context.args[0]
     tg_user = update.message.from_user
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
@@ -112,17 +114,25 @@ def add(update, context):
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
 
-    if(not feed_url in user_data[str(tg_user.id)]):
-        user_data[str(tg_user.id)].append(feed_url)
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f'Теперь вы подписаны на {feed_url}')
-    else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'Список ваших подписок: '
-                                                                    f'{user_data[str(tg_user.id)]}')
-    set_user_data('user_db.txt', user_data)
+    # context.bot.send_message(chat_id=update.effective_chat.id, text=feed_url)
+
+    with db_session:
+        if not feed_url in select(f.url for f in Feed)[:]:
+            f1 = add_feed(feed_url)
+
+    with db_session:    
+        for u1 in select(u for u in User if u.user_id == tg_user.id)[:]:
+            u = u1
+        for f1 in select(f for f in Feed if f.url == feed_url)[:]:
+            f = f1
+        if not f in u.sites:
+            add_feed_user(f, u)
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f'Теперь вы подписаны на {feed_url}')
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
 #endregion
 
-#region Setup
+#region Telegram Setup
 telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
 updater = Updater(telegram_token, use_context=True)
 dispather = updater.dispatcher
