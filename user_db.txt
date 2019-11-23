@@ -1,11 +1,2 @@
 318191949
-Bulat Safin
-False
-bulat_1
-en
-
-978137994
-’‡Î¡‡ı
-False
-None
-None
+https://vc.ru/rss/all https://www.igromania.ru/rss/all.rss
