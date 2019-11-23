@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import feedparser
 import urllib.request
 import telegram
+import requests
 #endregion
 
 #region Util functions
@@ -23,14 +24,13 @@ def set_user_data(data_path, user_data):
     with open(data_path, 'wt') as data_file:
         data_file.write('\n'.join(data_list))
 
-def get_rss_feed1(website_url):
-    page = urllib.request.urlopen(website_url)
-    soup = BeautifulSoup(page)
-
-    link = soup.find('link', type='application/rss+xml')
-    if link is None:
-        return 'no link'
-    return link['href']
+def get_rss_feed(website_url):
+    source_code = requests.get(website_url)
+    plain_text = source_code.text
+    soup = BeautifulSoup(plain_text)
+    for link in soup.find_all("link", {"type" : "application/rss+xml"}):
+        href = link.get('href')
+        return href
 #endregion
 
 #region Start
@@ -64,7 +64,7 @@ def read(update, context):
     # arg_name = args[1]
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
 
-    feed_url = get_rss_feed1(arg_url)
+    feed_url = get_rss_feed(arg_url)
     if feed_url == 'no link':
         context.bot.send_message(chat_id=update.effective_chat.id, text=f'Извините, я не нашёл RSS ленту на этом'
                                                                         f' сайте. Попробуйте ввести другую ссылку')
@@ -103,7 +103,7 @@ def add(update, context):
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
 
-    feed_url = get_rss_feed1(arg_url)
+    feed_url = get_rss_feed(arg_url)
     if feed_url == 'no link':
         context.bot.send_message(chat_id=update.effective_chat.id, text=f'Извините, я не нашёл RSS ленту на этом'
                                                                         f' сайте. Попробуйте ввести другую ссылку')
@@ -123,7 +123,7 @@ def add(update, context):
 #endregion
 
 #region Setup
-telegram_token = 'TOKEN'
+telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
 updater = Updater(telegram_token, use_context=True)
 dispather = updater.dispatcher
 
