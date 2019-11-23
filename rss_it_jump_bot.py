@@ -4,29 +4,23 @@ from bs4 import BeautifulSoup
 import feedparser
 import urllib.request
 import telegram
-import sqlite3
 #endregion
 
-conn = sqlite3.connect('id-sites')
-cursor = conn.cursor
-conn2 = sqlite3.connect('sites-id')
-conn2 = conn2.cursor
 #region Util functions
 def get_user_data(data_path):
     with open(data_path, 'rt') as data_file:
-        data_list = da  ta_file.read().split('\n')
-    user_data = {data_list[i * 6] : [data_list[i*6 + j] for j in range(1, 6)] for i in range(len(data_list) // 6)}
+        data_list = data_file.read().split('\n')
+    user_data = {data_list[i*2] : data_list[i*2 + 1] for i in range(len(data_list) // 2)}
     for key in user_data.keys():
-        user_data[key][-1] = user_data[key][-1].split() # Если подписки записаны через пробел
-    # В итоге должно получиться что-то типа {id : [first_name, is_bot, username, language_code, [subscribes]]}
+        user_data[key] = user_data[key].split() # Если подписки записаны через пробел
+    # В итоге должно получиться что-то типа {id : [subscribes]}
     return user_data
 
 def set_user_data(data_path, user_data):
     data_list = []
     for key in user_data.keys():
-        data_list.append(str(key))
-        data_list.extend([str(user_data[key][i]) for i in range(4)])
-        data_list.append(' '.join(user_data[key][-1])) 
+        data_list.append(key)
+        data_list.append(' '.join(user_data[key]))
     with open(data_path, 'wt') as data_file:
         data_file.write('\n'.join(data_list))
 
@@ -46,7 +40,7 @@ def start(update, context):
     tg_user = update.message.from_user
 
     if not tg_user.id in user_data.keys():
-        user_data[tg_user.id] = [tg_user.first_name, tg_user.is_bot, tg_user.username, tg_user.language_code, []]
+        user_data[str(tg_user.id)] = []
 
     set_user_data('user_db.txt', user_data)
 
@@ -83,7 +77,6 @@ def read(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Осталось совсем чуть-чуть...')
 
     feed = feedparser.parse(feed_url)
-
     feed_title = feed['feed']['title']
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
 
@@ -92,11 +85,8 @@ def read(update, context):
         article_title = entry.title
         article_link = entry.link
         article_published_at = entry.published
-        article_published_at_parsed = entry.published_parsed  # Time object
-        content = entry.summary
 
         msg = f'''{article_title}
-{content}
 ----------------------------
 published at {article_published_at}
 ----------------------------
@@ -123,19 +113,18 @@ def add(update, context):
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
 
-    print(user_data, tg_user.id, feed_url)
-    if(not feed_url in user_data[str(tg_user.id)][-1]):
-        user_data[str(tg_user.id)][-1].append(feed_url)
+    if(not feed_url in user_data[str(tg_user.id)]):
+        user_data[str(tg_user.id)].append(feed_url)
         context.bot.send_message(chat_id=update.effective_chat.id, text=f'Теперь вы подписаны на {feed_url}')
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'Список ваших подписок: '
-                                                                    f'{user_data[str(tg_user.id)][-1]}')
+                                                                    f'{user_data[str(tg_user.id)]}')
     set_user_data('user_db.txt', user_data)
 #endregion
 
 #region Setup
-telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
+telegram_token = 'TOKEN'
 updater = Updater(telegram_token, use_context=True)
 dispather = updater.dispatcher
 
