@@ -132,6 +132,12 @@ def add(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
 #endregion
 
+#region Refresh Function
+def refresh_function(context: telegram.ext.CallbackContext):
+    for site in select(feed.site for feed in Feed):
+        pass
+#endregion
+
 #region Telegram Setup
 telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
 updater = Updater(telegram_token, use_context=True)
