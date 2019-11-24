@@ -163,7 +163,7 @@ def refresh_function(context: telegram.ext.CallbackContext):
                 print(msg)
                 for user in feed_obj.users:
                     context.bot.send_message(chat_id=user.id, text=msg)
-            change_modified(feed_obj, feed.modified)
+            change_modified(feed_obj, feed['feed']['modified'])
         
 #endregion
 
