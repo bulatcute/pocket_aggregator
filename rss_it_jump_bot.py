@@ -148,8 +148,9 @@ def refresh_function(context: telegram.ext.CallbackContext):
             feed = feedparser.parse(feed_obj.url, modified=feed_obj.modified)
             feed_title = feed['feed']['title']
             print(feed_title)
+            show(feed_obj.users)
             for user in feed_obj.users:
-                context.bot.send_message(chat_id=user.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
+                context.bot.send_message(chat_id=user.user_id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
 
             feed_entries = feed.entries
             for entry in feed.entries:
@@ -162,7 +163,7 @@ def refresh_function(context: telegram.ext.CallbackContext):
 {article_link}'''
                 print(msg)
                 for user in feed_obj.users:
-                    context.bot.send_message(chat_id=user.id, text=msg)
+                    context.bot.send_message(chat_id=user.user_id, text=msg)
             change_modified(feed_obj, feed['feed']['modified'])
         
 #endregion
@@ -180,5 +181,5 @@ dispather.add_handler(CommandHandler("add", add))
 
 updater.start_polling()
 
-j_queue.run_repeating(refresh_function, 300)
+j_queue.run_repeating(refresh_function, 10)
 #endregion
