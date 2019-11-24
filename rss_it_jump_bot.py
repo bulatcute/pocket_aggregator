@@ -138,9 +138,11 @@ def add(update, context):
 
 #region Refresh Function
 def refresh_function(context: telegram.ext.CallbackContext):
+    print('running refresh-function')
     for feed_obj in select(feed for feed in Feed)[:]:
         feed = feedparser.parse(feed_obj.url, modified=feed_obj.modified)
         feed_title = feed['feed']['title']
+        print(feed_title)
         for user in feed_obj.users:
             context.bot.send_message(chat_id=user.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
 
@@ -149,11 +151,11 @@ def refresh_function(context: telegram.ext.CallbackContext):
             article_title = entry.title
             article_link = entry.link
             article_published_at = entry.published
-            print(type(article_published_at))
 
             msg = f'''{article_title}
 {article_published_at}
 {article_link}'''
+            print(msg)
             for user in feed_obj.users:
                 context.bot.send_message(chat_id=user.id, text=msg)
         
