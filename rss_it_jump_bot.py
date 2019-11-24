@@ -17,6 +17,7 @@ class User(db.Entity):
 
 class Feed(db.Entity):
     url = Required(str)
+    modified = Required(str)
     users = Set(User)
 
 @db_session
@@ -28,8 +29,12 @@ def add_user(id):
     return User(user_id=id)
 
 @db_session
-def add_feed(aurl):
-    return Feed(url=aurl)
+def add_feed(aurl, modif):
+    return Feed(url=aurl, modified=modif)
+
+@db_session
+def change_modified(feed, modif):
+    feed.modified = modif
 
 db.generate_mapping(create_tables=True)
 #endregion
@@ -89,11 +94,10 @@ def read(update, context):
         article_title = entry.title
         article_link = entry.link
         article_published_at = entry.published
+        print(type(article_published_at))
 
         msg = f'''{article_title}
-----------------------------
-published at {article_published_at}
-----------------------------
+{article_published_at}
 {article_link}'''
         context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
 #endregion
@@ -134,8 +138,25 @@ def add(update, context):
 
 #region Refresh Function
 def refresh_function(context: telegram.ext.CallbackContext):
-    for site in select(feed.site for feed in Feed):
-        pass
+    for feed_obj in select(feed for feed in Feed)[:]:
+        feed = feedparser.parse(feed_obj.url, modified=feed_obj.modified)
+        feed_title = feed['feed']['title']
+        for user in feed_obj.users:
+            context.bot.send_message(chat_id=user.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
+
+        feed_entries = feed.entries
+        for entry in feed.entries:
+            article_title = entry.title
+            article_link = entry.link
+            article_published_at = entry.published
+            print(type(article_published_at))
+
+            msg = f'''{article_title}
+{article_published_at}
+{article_link}'''
+            for user in feed_obj.users:
+                context.bot.send_message(chat_id=user.id, text=msg)
+        
 #endregion
 
 #region Telegram Setup
@@ -150,4 +171,6 @@ dispather.add_handler(CommandHandler("read", read))
 dispather.add_handler(CommandHandler("add", add))
 
 updater.start_polling()
+
+j_queue.run_repeating(refresh_function, 300)
 #endregion
