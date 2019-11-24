@@ -123,9 +123,6 @@ def add(update, context):
     feed = feedparser.parse(feed_url)
     with db_session:
         if not feed_url in select(f.url for f in Feed)[:]:
-            print('not feed in select')
-            print('parsed')
-            print(feed['feed']['updated'])
             f1 = add_feed(feed_url, feed['feed']['updated'])
 
     with db_session:    
