@@ -118,11 +118,15 @@ def add(update, context):
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
 
-    # context.bot.send_message(chat_id=update.effective_chat.id, text=feed_url)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=feed_url)
 
+    feed = feedparser.parse(feed_url)
     with db_session:
         if not feed_url in select(f.url for f in Feed)[:]:
-            f1 = add_feed(feed_url)
+            print('not feed in select')
+            print('parsed')
+            print(feed['feed']['updated'])
+            f1 = add_feed(feed_url, feed['feed']['updated'])
 
     with db_session:    
         for u1 in select(u for u in User if u.user_id == tg_user.id)[:]:
@@ -139,25 +143,27 @@ def add(update, context):
 #region Refresh Function
 def refresh_function(context: telegram.ext.CallbackContext):
     print('running refresh-function')
-    for feed_obj in select(feed for feed in Feed)[:]:
-        feed = feedparser.parse(feed_obj.url, modified=feed_obj.modified)
-        feed_title = feed['feed']['title']
-        print(feed_title)
-        for user in feed_obj.users:
-            context.bot.send_message(chat_id=user.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
+    with db_session:
+        for feed_obj in select(feed for feed in Feed)[:]:
+            feed = feedparser.parse(feed_obj.url, modified=feed_obj.modified)
+            feed_title = feed['feed']['title']
+            print(feed_title)
+            for user in feed_obj.users:
+                context.bot.send_message(chat_id=user.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
 
-        feed_entries = feed.entries
-        for entry in feed.entries:
-            article_title = entry.title
-            article_link = entry.link
-            article_published_at = entry.published
+            feed_entries = feed.entries
+            for entry in feed.entries:
+                article_title = entry.title
+                article_link = entry.link
+                article_published_at = entry.published
 
-            msg = f'''{article_title}
+                msg = f'''{article_title}
 {article_published_at}
 {article_link}'''
-            print(msg)
-            for user in feed_obj.users:
-                context.bot.send_message(chat_id=user.id, text=msg)
+                print(msg)
+                for user in feed_obj.users:
+                    context.bot.send_message(chat_id=user.id, text=msg)
+            change_modified(feed_obj, feed.modified)
         
 #endregion
 
