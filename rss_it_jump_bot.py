@@ -60,47 +60,16 @@ def start(update, context):
         if not tg_user.id in select(u.user_id for u in User)[:]:
             u1 = add_user(tg_user.id)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я — бот-новостной агрегатор, разработанный на смене IT Jump Pro\
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я — бот-новостной агрегатор PocketAgregator\
 \nНапиши мне /help и я скажу тебе как мной пользоваться")
 #endregion
 
 #region Help
 def help(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Напиши мне /add {ссылка на новостной ресурс} и я \
-буду уведомлять тебя о новых статьях этого сайта.\
-\nНапример: /add https://theverge.com')
-#endregion
-
-#region Read
-def read(update, context):
-    arg_url = context.args[0]
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
-
-    feed_url = get_rss_feed(arg_url)
-    if feed_url == 'no link':
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f'Извините, я не нашёл RSS ленту на этом'
-                                                                        f' сайте. Попробуйте ввести другую ссылку')
-        return
-
-    if feed_url.startswith('/'):
-        feed_url = arg_url + feed_url
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Осталось совсем чуть-чуть...')
-
-    feed = feedparser.parse(feed_url)
-    feed_title = feed['feed']['title']
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
-
-    feed_entries = feed.entries
-    for entry in feed.entries:
-        article_title = entry.title
-        article_link = entry.link
-        article_published_at = entry.published
-        print(type(article_published_at))
-
-        msg = f'''{article_title}
-{article_published_at}
-{article_link}'''
-        context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='''
+Напиши мне /add {ссылка на сайт} и я буду отправлять тебе новые статьи оттуда
+Напиши мне /subscribes и я покажу тебе список подписок (пока не работает)
+Напиши мне /remove {ссылка на сайт} и я удалю этот сайт из твоих подписок''')
 #endregion
 
 #region Add
@@ -180,10 +149,9 @@ dispather = updater.dispatcher
 
 dispather.add_handler(CommandHandler("start", start))
 dispather.add_handler(CommandHandler("help", help))
-dispather.add_handler(CommandHandler("read", read))
 dispather.add_handler(CommandHandler("add", add))
 
 updater.start_polling()
 
-j_queue.run_repeating(refresh_function, 10)
+j_queue.run_repeating(refresh_function, 300)
 #endregion
