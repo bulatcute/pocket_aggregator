@@ -47,13 +47,16 @@ db.generate_mapping(create_tables=True)
 #region Util functions
 
 def get_rss_feed(website_url):
-    source_code = requests.get(website_url)
-    plain_text = source_code.text
-    soup = BeautifulSoup(plain_text)
-    for link in soup.find_all("link", {"type" : "application/rss+xml"}):
-        href = link.get('href')        
-        print(href)
-        return href
+    try:
+        source_code = requests.get(website_url)
+        plain_text = source_code.text
+        soup = BeautifulSoup(plain_text)
+        for link in soup.find_all("link", {"type" : "application/rss+xml"}):
+            href = link.get('href')        
+            print(href)
+            return href
+    except:
+        return ''
 #endregion
 
 #region Start
@@ -72,7 +75,7 @@ def start(update, context):
 def help(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='''
 Напиши мне /add {ссылка на сайт} и я буду отправлять тебе новые статьи оттуда
-Напиши мне /subscribes и я покажу тебе список подписок (пока не работает)
+Напиши мне /list и я покажу тебе список подписок
 Напиши мне /remove {ссылка на сайт} и я удалю этот сайт из твоих подписок''')
 #endregion
 
@@ -85,6 +88,11 @@ def add(update, context):
 
     feed_url = get_rss_feed(arg_url)
 
+    if not feed_url:
+        context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
+        context.bot.send_message(chat_id=update.effective_chat.id, text='По вашему запросу ничего не найдено.')
+        return
+
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
 
@@ -94,7 +102,6 @@ def add(update, context):
     with db_session:
         if not feed_url in select(f.url for f in Feed)[:]:
             f1 = add_feed(feed_url, last_post)
-    print('added')
     with db_session:    
         for u1 in select(u for u in User if u.user_id == tg_user.id)[:]:
             u = u1
@@ -127,6 +134,11 @@ def remove(update, context):
     msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
 
     feed_url = get_rss_feed(arg_url)
+
+    if not feed_url:
+        context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
+        context.bot.send_message(chat_id=update.effective_chat.id, text='По вашему запросу ничего не найдено.')
+        return
 
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
@@ -168,8 +180,6 @@ def refresh_function(context: telegram.ext.CallbackContext):
     with db_session:
         for feed_obj in select(feed for feed in Feed)[:]:
             feed = feedparser.parse(feed_obj.url)
-            feed_title = feed['feed']['title']
-            print(feed_title)
             
             for entry in feed.entries:
                 print(entry.published_parsed)
