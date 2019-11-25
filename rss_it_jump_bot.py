@@ -81,14 +81,12 @@ def add(update, context):
     arg_url = context.args[0]
     tg_user = update.message.from_user
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
+    msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
 
     feed_url = get_rss_feed(arg_url)
 
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=feed_url)
 
     feed = feedparser.parse(feed_url)
     last_post = int(max([time.mktime(e.published_parsed) for e in feed.entries]))
@@ -104,8 +102,25 @@ def add(update, context):
             f = f1
         if not f in u.sites:
             add_feed_user(f, u)
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f'Теперь вы подписаны на {feed_url}')
+            context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f'Теперь вы подписаны на {feed_url}\n'
+                                                                            f'Пока можете оснакомиться с последними статьями этого сайта')
+            entry_count = 0
+            for entry in feed.entries:
+                if entry_count < 3:
+                    article_title = entry.title
+                    article_link = entry.link
+                    article_published_at = entry.published
+
+                    msg = f'''{article_title}
+{article_published_at}
+{article_link}'''
+                    context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+                    entry+=1
+                else:
+                    break
         else:
+            context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
 #endregion
 
@@ -114,7 +129,7 @@ def remove(update, context):
     arg_url = context.args[0]
     tg_user = update.message.from_user
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...')
+    msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
 
     feed_url = get_rss_feed(arg_url)
 
@@ -125,17 +140,20 @@ def remove(update, context):
 
     with db_session:
         if not feed_url in select(f.url for f in Feed)[:]:
+            context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'Вы не подписаны на {feed_url}')
-            
+
     with db_session:
         for u1 in select(u for u in User if u.user_id == tg_user.id)[:]:
             u = u1
         for f1 in select(f for f in Feed if f.url == feed_url)[:]:
             f = f1
         if not f in u.sites:
+            context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'Вы не подписаны на {feed_url}')
         else:
             remove_feed_user(f, u)
+            context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'{feed_url} успешено удалён')
 #endregion
 
