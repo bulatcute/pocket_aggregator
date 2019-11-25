@@ -101,24 +101,19 @@ def add(update, context):
         for f1 in select(f for f in Feed if f.url == feed_url)[:]:
             f = f1
         if not f in u.sites:
+    
             add_feed_user(f, u)
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'Теперь вы подписаны на {feed_url}\n'
                                                                             f'Пока можете оснакомиться с последними статьями этого сайта')
-            entry_count = 0
-            for entry in feed.entries:
-                if entry_count < 3:
-                    article_title = entry.title
-                    article_link = entry.link
-                    article_published_at = entry.published
-
-                    msg = f'''{article_title}
+            entry = feed.entries[0]
+            article_title = entry.title
+            article_link = entry.link
+            article_published_at = entry.published
+            msg = f'''{article_title}
 {article_published_at}
 {article_link}'''
-                    context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
-                    entry+=1
-                else:
-                    break
+            context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
         else:
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
@@ -135,8 +130,6 @@ def remove(update, context):
 
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
-
-    print(feed_url)
 
     with db_session:
         if not feed_url in select(f.url for f in Feed)[:]:
@@ -155,6 +148,18 @@ def remove(update, context):
             remove_feed_user(f, u)
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'{feed_url} успешено удалён')
+#endregion
+
+#region list
+def sub_list(update,context):
+    tg_user = update.message.from_user
+    msg = ''
+    with db_session:
+        for usr in select(u1 for u1 in User if u1.user_id == tg_user.id)[:]:
+            for fd in select(f1.url for f1 in Feed if f1 in usr.sites)[:]:
+                msg = msg + fd + '\n'
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Список подписок:\n' + msg)
+            
 #endregion
 
 #region Refresh Function
@@ -197,6 +202,7 @@ dispather.add_handler(CommandHandler("start", start))
 dispather.add_handler(CommandHandler("help", help))
 dispather.add_handler(CommandHandler("add", add))
 dispather.add_handler(CommandHandler("remove", remove))
+dispather.add_handler(CommandHandler("list", sub_list))
 
 updater.start_polling()
 
