@@ -117,9 +117,7 @@ def refresh_function(context: telegram.ext.CallbackContext):
             feed = feedparser.parse(feed_obj.url)
             feed_title = feed['feed']['title']
             print(feed_title)
-            for user in feed_obj.users:
-                context.bot.send_message(chat_id=user.user_id, text=f'*{feed_title.upper()}*', parse_mode='markdown')
-
+            
             for entry in feed.entries:
                 print(entry.published_parsed)
                 print(time.mktime(entry.published_parsed))
