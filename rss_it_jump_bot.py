@@ -66,9 +66,9 @@ def start(update, context):
 
 #region Help
 def help(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Напиши мне /read {ссылка на новостной ресурс} и я \
-покажу тебе последние статьи этого сайта.\
-\nНапример: /read https://dtf.ru')
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Напиши мне /add {ссылка на новостной ресурс} и я \
+буду уведомлять тебя о новых статьях этого сайта.\
+\nНапример: /add https://theverge.com')
 #endregion
 
 #region Read
