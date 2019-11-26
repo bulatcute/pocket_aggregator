@@ -57,6 +57,16 @@ def get_rss_feed(website_url):
             return href
     except:
         return ''
+
+def convert(url):
+    if url.startswith('http://www.'):
+        return 'http://' + url[len('http://www.'):]
+    if url.startswith('www.'):
+        return 'http://' + url[len('www.'):]
+    if not url.startswith('http://'):
+        return 'http://' + url
+    print(url)
+    return url
 #endregion
 
 #region Start
@@ -81,7 +91,7 @@ def help(update, context):
 
 #region Add
 def add(update, context):
-    arg_url = context.args[0]
+    arg_url = convert(context.args[0])
     tg_user = update.message.from_user
 
     msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
@@ -95,6 +105,7 @@ def add(update, context):
 
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
+        print(feed_url)
 
     feed = feedparser.parse(feed_url)
     last_post = int(max([time.mktime(e.published_parsed) for e in feed.entries]))
@@ -128,7 +139,7 @@ def add(update, context):
 
 #region Remove
 def remove(update, context):
-    arg_url = context.args[0]
+    arg_url = convert(context.args[0])
     tg_user = update.message.from_user
 
     msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
@@ -216,5 +227,5 @@ dispather.add_handler(CommandHandler("list", sub_list))
 
 updater.start_polling()
 
-j_queue.run_repeating(refresh_function, 300)
+j_queue.run_repeating(refresh_function, 900)
 #endregion
