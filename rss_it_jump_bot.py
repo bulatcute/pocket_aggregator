@@ -7,6 +7,8 @@ import urllib.request
 import telegram
 import requests
 import time
+import os
+import dotenv
 #endregion
 
 #region Database Setup
@@ -142,7 +144,7 @@ def remove(update, context):
     arg_url = convert(context.args[0])
     tg_user = update.message.from_user
 
-    msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
+    msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу {arg_url} среди ваших подписок...').message_id
 
     feed_url = get_rss_feed(arg_url)
 
@@ -170,7 +172,7 @@ def remove(update, context):
         else:
             remove_feed_user(f, u)
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f'{feed_url} успешено удалён')
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f'{feed_url} успешно удалён')
 #endregion
 
 #region list
@@ -181,6 +183,9 @@ def sub_list(update,context):
         for usr in select(u1 for u1 in User if u1.user_id == tg_user.id)[:]:
             for fd in select(f1.url for f1 in Feed if f1 in usr.sites)[:]:
                 msg = msg + fd + '\n'
+    if not msg:
+        context.bot.send_message(chat_id=update.effective_chat.id, text='У вас нет подписок. Напишите /help, чтобы узнать, как подписаться на сайт')
+        return
     context.bot.send_message(chat_id=update.effective_chat.id, text='Список подписок:\n' + msg)
             
 #endregion
@@ -214,7 +219,8 @@ def refresh_function(context: telegram.ext.CallbackContext):
 #endregion
 
 #region Telegram Setup
-telegram_token = '1025022667:AAGy4d57cRfbZAOXsNM5W2rvRPYKegyttgM'
+dotenv.load_dotenv()
+telegram_token = os.environ['TOKEN']
 updater = Updater(telegram_token, use_context=True)
 j_queue = updater.job_queue
 dispather = updater.dispatcher
