@@ -1,5 +1,5 @@
 #region Imports
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
 from bs4 import BeautifulSoup
 from pony.orm import *
 import feedparser
@@ -63,9 +63,11 @@ def get_rss_feed(website_url):
 def convert(url):
     if url.startswith('http://www.'):
         return 'http://' + url[len('http://www.'):]
+    elif url.startswith('https://www.'):
+        return 'http://' + url[len('https://www.'):]
     if url.startswith('www.'):
         return 'http://' + url[len('www.'):]
-    if not url.startswith('http://'):
+    if not url.startswith('http'):
         return 'http://' + url
     print(url)
     return url
@@ -131,7 +133,6 @@ def add(update, context):
             article_link = entry.link
             article_published_at = entry.published
             msg = f'''{article_title}
-{article_published_at}
 {article_link}'''
             context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
         else:
@@ -209,13 +210,17 @@ def refresh_function(context: telegram.ext.CallbackContext):
                     article_published_at = entry.published
 
                     msg = f'''{article_title}
-{article_published_at}
 {article_link}'''
                     print(msg)
                     for user in feed_obj.users:
                         context.bot.send_message(chat_id=user.user_id, text=msg)
             change_modified(feed_obj, int(max([time.mktime(e.published_parsed) for e in feed.entries])))
         
+#endregion
+
+#region Unknown Command
+def unknown_command(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Простите, я вас не понимаю. Напишите /help")
 #endregion
 
 #region Telegram Setup
@@ -230,6 +235,8 @@ dispather.add_handler(CommandHandler("help", help))
 dispather.add_handler(CommandHandler("add", add))
 dispather.add_handler(CommandHandler("remove", remove))
 dispather.add_handler(CommandHandler("list", sub_list))
+dispather.add_handler(MessageHandler(Filters.command, unknown_command))
+dispather.add_handler(MessageHandler(Filters.text, unknown_command))
 
 updater.start_polling()
 
