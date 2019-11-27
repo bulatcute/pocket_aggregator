@@ -2,3 +2,4 @@ user_db.txt
 bot.sqlite
 bot.sqlite-journal
 .env
+notebook.ipynb

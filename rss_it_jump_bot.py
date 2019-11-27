@@ -1,5 +1,5 @@
 #region Imports
-from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
+from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, ConversationHandler
 from bs4 import BeautifulSoup
 from pony.orm import *
 import feedparser
@@ -9,6 +9,11 @@ import requests
 import time
 import os
 import dotenv
+#endregion
+
+#region Constants
+ADD_COMMAND = 0
+REMOVE_COMMAND = 1
 #endregion
 
 #region Database Setup
@@ -93,9 +98,11 @@ def help(update, context):
 Напиши мне /remove {ссылка на сайт} и я удалю этот сайт из твоих подписок''')
 #endregion
 
-#region Add
-def add(update, context):
-    arg_url = convert(context.args[0])
+#region Add Text
+def add_text(update, context):
+    print('running add_text')
+    arg_url = update.message.text
+    print(arg_url)
     tg_user = update.message.from_user
 
     msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу RSS ленту на {arg_url}...').message_id
@@ -140,9 +147,15 @@ def add(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
 #endregion
 
-#region Remove
-def remove(update, context):
-    arg_url = convert(context.args[0])
+#region Add Command
+def add_command(update,context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Введите адрес ссылки')
+    return ADD_COMMAND
+#endregion
+
+#region Remove Text
+def remove_text(update, context):
+    arg_url = update.message.text
     tg_user = update.message.from_user
 
     msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу {arg_url} среди ваших подписок...').message_id
@@ -174,6 +187,12 @@ def remove(update, context):
             remove_feed_user(f, u)
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'{feed_url} успешно удалён')
+#endregion
+
+#region Remove Command
+def remove_command(update,context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text = 'Введите адрес ссылки')
+    return REMOVE_COMMAND
 #endregion
 
 #region list
@@ -230,13 +249,21 @@ updater = Updater(telegram_token, use_context=True)
 j_queue = updater.job_queue
 dispather = updater.dispatcher
 
-dispather.add_handler(CommandHandler("start", start))
+conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+
+        states={
+            ADD_COMMAND : [MessageHandler(Filters.text, add_text)],
+            REMOVE_COMMAND: [MessageHandler(Filters.text, remove_text)]
+        },
+
+        fallbacks = []
+    )
+dispather.add_handler(conv_handler)
 dispather.add_handler(CommandHandler("help", help))
-dispather.add_handler(CommandHandler("add", add))
-dispather.add_handler(CommandHandler("remove", remove))
+dispather.add_handler(CommandHandler("add", add_command))
+dispather.add_handler(CommandHandler("remove", remove_command))
 dispather.add_handler(CommandHandler("list", sub_list))
-dispather.add_handler(MessageHandler(Filters.command, unknown_command))
-dispather.add_handler(MessageHandler(Filters.text, unknown_command))
 
 updater.start_polling()
 
