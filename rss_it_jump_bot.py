@@ -14,6 +14,7 @@ import dotenv
 #region Constants
 ADD_COMMAND = 0
 REMOVE_COMMAND = 1
+CHOOSING = 2
 #endregion
 
 #region Database Setup
@@ -88,6 +89,7 @@ def start(update, context):
 
     context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я — бот-новостной агрегатор PocketAgregator\
 \nНапиши мне /help и я скажу тебе как мной пользоваться")
+    return CHOOSING
 #endregion
 
 #region Help
@@ -96,12 +98,13 @@ def help(update, context):
 Напиши мне /add {ссылка на сайт} и я буду отправлять тебе новые статьи оттуда
 Напиши мне /list и я покажу тебе список подписок
 Напиши мне /remove {ссылка на сайт} и я удалю этот сайт из твоих подписок''')
+    return CHOOSING
 #endregion
 
 #region Add Text
 def add_text(update, context):
     print('running add_text')
-    arg_url = update.message.text
+    arg_url = convert(update.message.text)
     print(arg_url)
     tg_user = update.message.from_user
 
@@ -111,8 +114,8 @@ def add_text(update, context):
 
     if not feed_url:
         context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
-        context.bot.send_message(chat_id=update.effective_chat.id, text='По вашему запросу ничего не найдено.')
-        return
+        context.bot.send_message(chat_id=update.effective_chat.id, text='По вашему запросу ничего не найдено')
+        return CHOOSING
 
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
@@ -145,6 +148,7 @@ def add_text(update, context):
         else:
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text='Этот сайт уже есть среди ваших подписок')
+    return CHOOSING
 #endregion
 
 #region Add Command
@@ -155,7 +159,7 @@ def add_command(update,context):
 
 #region Remove Text
 def remove_text(update, context):
-    arg_url = update.message.text
+    arg_url = convert(update.message.text)
     tg_user = update.message.from_user
 
     msg_id = context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ищу {arg_url} среди ваших подписок...').message_id
@@ -164,8 +168,8 @@ def remove_text(update, context):
 
     if not feed_url:
         context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
-        context.bot.send_message(chat_id=update.effective_chat.id, text='По вашему запросу ничего не найдено.')
-        return
+        context.bot.send_message(chat_id=update.effective_chat.id, text='По вашему запросу ничего не найдено')
+        return CHOOSING
 
     if feed_url.startswith('/'):
         feed_url = arg_url + feed_url
@@ -187,6 +191,7 @@ def remove_text(update, context):
             remove_feed_user(f, u)
             context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg_id)
             context.bot.send_message(chat_id=update.effective_chat.id, text=f'{feed_url} успешно удалён')
+    return CHOOSING
 #endregion
 
 #region Remove Command
@@ -207,7 +212,7 @@ def sub_list(update,context):
         context.bot.send_message(chat_id=update.effective_chat.id, text='У вас нет подписок. Напишите /help, чтобы узнать, как подписаться на сайт')
         return
     context.bot.send_message(chat_id=update.effective_chat.id, text='Список подписок:\n' + msg)
-            
+    return CHOOSING
 #endregion
 
 #region Refresh Function
@@ -253,6 +258,10 @@ conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
 
         states={
+            CHOOSING : [CommandHandler("add", add_command),
+                        CommandHandler("remove", remove_command),
+                        CommandHandler("help", help),
+                        CommandHandler("list", sub_list)],
             ADD_COMMAND : [MessageHandler(Filters.text, add_text)],
             REMOVE_COMMAND: [MessageHandler(Filters.text, remove_text)]
         },
@@ -260,10 +269,6 @@ conv_handler = ConversationHandler(
         fallbacks = []
     )
 dispather.add_handler(conv_handler)
-dispather.add_handler(CommandHandler("help", help))
-dispather.add_handler(CommandHandler("add", add_command))
-dispather.add_handler(CommandHandler("remove", remove_command))
-dispather.add_handler(CommandHandler("list", sub_list))
 
 updater.start_polling()
 
