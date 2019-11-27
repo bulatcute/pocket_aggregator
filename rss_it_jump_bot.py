@@ -261,9 +261,12 @@ conv_handler = ConversationHandler(
             CHOOSING : [CommandHandler("add", add_command),
                         CommandHandler("remove", remove_command),
                         CommandHandler("help", help),
-                        CommandHandler("list", sub_list)],
-            ADD_COMMAND : [MessageHandler(Filters.text, add_text)],
-            REMOVE_COMMAND: [MessageHandler(Filters.text, remove_text)]
+                        CommandHandler("list", sub_list),
+                        MessageHandler(Filters.command or Filters.text, unknown_command)],
+            ADD_COMMAND : [MessageHandler(Filters.text, add_text),
+                           MessageHandler(Filters.command or Filters.text, unknown_command)],
+            REMOVE_COMMAND: [MessageHandler(Filters.text, remove_text),
+                             MessageHandler(Filters.command or Filters.text, unknown_command)]
         },
 
         fallbacks = []
