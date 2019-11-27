@@ -268,6 +268,7 @@ def refresh_function(context: telegram.ext.CallbackContext):
                     for user in feed_obj.users:
                         context.bot.send_message(chat_id=user.user_id, text=msg)
             change_modified(feed_obj, int(max([time.mktime(e.published_parsed) for e in feed.entries])))
+    return CHOOSING
 
 
 # endregion
