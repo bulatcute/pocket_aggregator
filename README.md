@@ -1,4 +1,4 @@
-# IT Jump RSS Bot
+# Pocket Aggregator
 ## Team: 
 bulatcute, StailFX, dwarfLOL
 ## Description:
