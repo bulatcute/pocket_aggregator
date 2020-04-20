@@ -1,6 +1,5 @@
 # Pocket Aggregator
-## Team: 
-bulatcute, StailFX, dwarfLOL
-## Description:
-This bot can collect posts from different news portals.
-bruh
+
+## Описание:
+
+Это исходный код telegram бота, который получает и присылает новые новости с сайтов, на которые вы подписаны через rss
